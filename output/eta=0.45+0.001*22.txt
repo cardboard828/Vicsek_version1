@@ -1,0 +1,8 @@
+#L = 256
+#rho = 2
+#N = 131072
+#v0 = 0.5
+#nsteps = 10000
+#dt = 1
+#order_parameter  #eta
+0.0544037 0.472
