@@ -7,12 +7,7 @@
 #include <time.h>
 #include <omp.h> 
 #include <chrono>
-
-struct Particle
-{
-    double x, y;
-    double orientation;
-};
+#include "Particle.h"
 
 double dist(Particle p1, Particle p2)
 {
