@@ -3,8 +3,8 @@ CXX = g++-14
 CXXFLAGS = -std=c++17 -O3 -fopenmp -Wall -Wextra -pedantic -Werror #-O0 -g#:デバッグ情報を追加, -O0:最適化を完全に無効化（変数や関数の情報が省略されなくなる）
 
 # Target
-TARGET = main
-SRCS = main.cpp dist.cpp getNeighboringCell.cpp initialize_particles.cpp Cell_Map.cpp get_orientations.cpp update_particles_and_order_parameter.cpp
+TARGET = test
+SRCS = vicsek_heiretsu_version0.cpp #main.cpp dist.cpp getNeighboringCell.cpp initialize_particles.cpp Cell_Map.cpp update_particles_and_order_parameter.cpp
 
 # Build target
 all: $(TARGET)

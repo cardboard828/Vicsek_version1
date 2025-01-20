@@ -7,15 +7,38 @@
 #include <time.h>
 #include <omp.h> 
 #include <chrono>
-#include "Particle.h"
-#include "dist.h"
-#include "getNeighboringCell.h"
-#include "Cell_Map.h"
-#include "initialize_particles.h"
 
+struct Particle
+{
+    double x, y;
+    double orientation;
+};
+
+double dist(Particle p1, Particle p2)
+{
+    return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+
+std::vector<std::array<int,2>> getNeighboringCell(int cell_x, int cell_y, int L)
+{
+    std::vector<std::array<int,2>> neighbors;
+    for (int dx = -1; dx <= 1; dx++)
+    {
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            int neighbor_x = (cell_x + dx + L) % L;
+            int neighbor_y = (cell_y + dy + L) % L;
+            neighbors.push_back({neighbor_x, neighbor_y});
+        }
+    }
+    return neighbors;
+}
 
 int main()
 {
+    std::chrono::system_clock::time_point  start, end; // 型は auto で可
+    start = std::chrono::system_clock::now(); // 計測開始時間
+
     // System parameters
     const int L = 256;
     const double rho = 2.0;
@@ -23,23 +46,21 @@ int main()
     const double v0 = 0.5;
     // const double eta = 0.4;
     // Radius of interaction is 1
+
     // Simulation parameters
-    const int nsteps = 10000;
+    const int nsteps = 100000;
     const double dt = 1;
 
-    const std::string output_folder = "output";
+    const std::string output_folder = "ver0_output_variable=eta";
     
-    
-    //eta-ruup
-    for (int k=0; k<50; k++)
+    //eta-loop
+    for (int k=4; k<10; k++)
     {
-        double eta=0.45+0.001*k;
+        double eta=0.4757-0.0001*k;
         double sum=0;
         double order_parameter_ev=0;
-        //whiteノイズの定義
-        std::uniform_real_distribution<> white_noise(-eta * M_PI, eta * M_PI);
         // ファイル名をetaに基づいて生成
-        std::string filename = output_folder + "/eta=0.45+0.001*" + std::to_string(k) + ".txt";
+        std::string filename = output_folder +"/ver0_output_eta=" + std::to_string(eta) + ".txt";
         // ファイルを開く
         std::ofstream file(filename);
 
@@ -55,26 +76,40 @@ int main()
         std::random_device seed_gen;
         std::mt19937 engine(seed_gen());
 
-        Particle particles[N];
-
         // Initialize particles
-        initialize_particles(particles, N, L, engine);
+        Particle particles[N];
+        std::uniform_real_distribution<> init_pos(0, L);
+        std::uniform_real_distribution<> dist_angle(0, 2 * M_PI);
+        std::uniform_real_distribution<> white_noise(-eta * M_PI, eta * M_PI);
+        #pragma omp parallel
+        {
+            #pragma omp for
+            for (int i = 0; i < N; i++)
+            {
+                particles[i].x = init_pos(engine);
+                particles[i].y = init_pos(engine);
+                particles[i].orientation = dist_angle(engine);
+            }
+        }
         
         for (int t = 0; t < nsteps; t++)
         {
             std::cout << "t = " << t << std::endl;
 
-            std::vector<double> order_parameter_x(N, 0);
-            std::vector<double> order_parameter_y(N, 0);
-            double order_parameter=0;
+            double order_parameter_x[8]={0,0,0,0,0,0,0,0};
+            double order_parameter_y[8]={0,0,0,0,0,0,0,0};
             double parameter_x=0;
             double parameter_y=0;
+            double order_parameter=0;
 
-            // 1x1セルの粒子マップを作成する
-            std::vector<Particle> particles(N); 
-            std::vector<std::vector<std::vector<Particle>>> cells;
-
-            createParticleMap(particles, N, L, cells);  // 関数を呼び出す
+            // Create a map of 1x1 cells to stored particles pointers
+            std::vector<std::vector<std::vector<Particle>>> cells(L, std::vector<std::vector<Particle>>(L));
+            for (int i = 0; i < N; i++)
+            {
+                int cell_x = particles[i].x;
+                int cell_y = particles[i].y;
+                cells[cell_x][cell_y].push_back(particles[i]);
+            }
 
             // an vector with the shape shape to store the new orientation
             std::vector<std::array<double, 2>> new_orientation_2(N);
@@ -114,9 +149,11 @@ int main()
                         }
             }
 
-            int num_threads;
-            #pragma omp parallel
-            {
+            //並列処理に使用したスレッド数をゲット
+            int num_threads=0;
+            // Update particle orientation and position
+                #pragma omp parallel
+                {
                     int thread_id = omp_get_thread_num();
                     num_threads = omp_get_num_threads();
                     #pragma omp for 
@@ -146,19 +183,22 @@ int main()
                         order_parameter_x[thread_id]+=cos(particles[i].orientation);
                         order_parameter_y[thread_id]+=sin(particles[i].orientation);
                     }
-            }
-            // std::cout << "thread数: " << num_threads << std::endl;
-            for (int i=0; i< num_threads; i++)
-            {
-                parameter_x+=order_parameter_x[i];
-                parameter_y+=order_parameter_y[i];
-            }
-            order_parameter=sqrt(pow(parameter_x,2)+pow(parameter_y,2))/N;
-            std::cout << "秩序変数: " << order_parameter << std::endl;
-            sum+=order_parameter;
+                }
+                // std::cout << "thread数: " << num_threads << std::endl;
+                for (int i=0; i< num_threads; i++)
+                {
+                    parameter_x+=order_parameter_x[i];
+                    parameter_y+=order_parameter_y[i];
+                }
+                order_parameter=sqrt(pow(parameter_x,2)+pow(parameter_y,2))/N;
+                std::cout << "秩序変数: " << order_parameter << std::endl;
+                sum+=order_parameter;
         }
         order_parameter_ev=sum/nsteps;
+        end = std::chrono::system_clock::now();  // 計測終了時間
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
 
+        file << "処理時間: " << elapsed << " ミリ秒" << '\n';
         file << "#order_parameter " << " " << "#eta"<< '\n';
         file << order_parameter_ev << " " << eta << '\n';     
         file.close();

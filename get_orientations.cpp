@@ -13,7 +13,7 @@ void get_orientations(
 )
 {
     // loop over all particles
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (size_t i = 0; i < particles.size(); i++)
     {
         int cell_x = floor(particles[i].x);
