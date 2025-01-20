@@ -8,11 +8,12 @@
 #include <omp.h> 
 #include <chrono>
 #include "Particle.h"
+#include "dist.h"
 
-double dist(Particle p1, Particle p2)
-{
-    return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
-}
+// double dist(Particle p1, Particle p2)
+// {
+//     return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+// }
 
 std::vector<std::array<int,2>> getNeighboringCell(int cell_x, int cell_y, int L)
 {

@@ -4,7 +4,7 @@ CXXFLAGS = -std=c++17 -O3 -fopenmp -Wall -Wextra -pedantic -Werror #-O0 -g#:ãƒ‡ã
 
 # Target
 TARGET = test
-SRCS = vicsek_heiretsu_version0.cpp #main.cpp dist.cpp getNeighboringCell.cpp initialize_particles.cpp Cell_Map.cpp update_particles_and_order_parameter.cpp
+SRCS = vicsek_heiretsu_version0.cpp dist.cpp #main.cpp dist.cpp getNeighboringCell.cpp initialize_particles.cpp Cell_Map.cpp update_particles_and_order_parameter.cpp
 
 # Build target
 all: $(TARGET)
