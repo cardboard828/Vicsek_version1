@@ -58,23 +58,23 @@ int main()
         std::uniform_real_distribution<> init_pos(0, L);
         std::uniform_real_distribution<> dist_angle(0, 2 * M_PI);
         std::uniform_real_distribution<> white_noise(-eta * M_PI, eta * M_PI);
-        #pragma omp parallel
+
+        #pragma omp parallel for
+        for (int i = 0; i < N; i++)
         {
-            #pragma omp for
-            for (int i = 0; i < N; i++)
-            {
-                particles[i].x = init_pos(engine);
-                particles[i].y = init_pos(engine);
-                particles[i].orientation = dist_angle(engine);
-            }
+            particles[i].x = init_pos(engine);
+            particles[i].y = init_pos(engine);
+            particles[i].orientation = dist_angle(engine);
         }
         
         for (int t = 0; t < nsteps; t++)
         {
             std::cout << "t = " << t << std::endl;
 
-            double order_parameter_x[8]={0,0,0,0,0,0,0,0};
-            double order_parameter_y[8]={0,0,0,0,0,0,0,0};
+            int num_threads = omp_get_num_threads();
+            //一旦32threadまで対応
+            double order_parameter_x[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            double order_parameter_y[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             double parameter_x=0;
             double parameter_y=0;
             double order_parameter=0;
@@ -127,12 +127,10 @@ int main()
             }
 
             //並列処理に使用したスレッド数をゲット
-            int num_threads=0;
             // Update particle orientation and position
                 #pragma omp parallel
                 {
                     int thread_id = omp_get_thread_num();
-                    num_threads = omp_get_num_threads();
                     #pragma omp for 
                     for (int i = 0; i < N; i++)
                     {
