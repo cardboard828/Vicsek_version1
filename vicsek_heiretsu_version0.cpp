@@ -159,7 +159,7 @@ int main()
                         order_parameter_y[thread_id]+=sin(particles[i].orientation);
                     }
                 }
-                // std::cout << "thread数: " << num_threads << std::endl;
+                std::cout << "thread数: " << num_threads << std::endl;
                 for (int i=0; i< num_threads; i++)
                 {
                     parameter_x+=order_parameter_x[i];
