@@ -31,7 +31,7 @@ int main()
     const std::string output_folder = "ver0_output_variable=eta";
     
     //eta-loop
-    for (int k=4; k<10; k++)
+    for (int k=0; k<10; k++)
     {
         double eta=0.4757-0.0001*k;
         double sum=0;
